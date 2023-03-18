@@ -1,11 +1,16 @@
+import io.realm.kotlin.Realm
+import io.realm.kotlin.RealmConfiguration
+import io.realm.kotlin.ext.query
+import io.realm.kotlin.query.RealmResults
+import model.UserRealModel
 import model.Users
 
-class Menu() {
+class Menu(var realm: Realm) {
     private var users = Users()
     private val atm = ATM(users)
 
 
-    fun openMenu(){
+    suspend fun openMenu(){
         var exit = false
         while (!exit) {
             println(
@@ -14,6 +19,9 @@ class Menu() {
             2. Authorisation
             3. *debug* Add sample
             4. *debug* User List
+            5. *debug* Put sample to database
+            6. *debug* DB user list
+            7. *debug* purge DB
             0. Exit
         """.trimIndent()
             )
@@ -26,7 +34,27 @@ class Menu() {
                 "4" -> users.getUsersList().forEach {
                     println("${it.login} ${it.password} ${it.money}")
                 }
-
+                "5" -> {
+                    realm.writeBlocking {
+                        copyToRealm(UserRealModel().apply {
+                            login = "Realm Login"
+                            password = "Realm Password"
+                            money = 20000.0
+                        })
+                    }
+                }
+                "6" -> {
+                    val dbtest: RealmResults<UserRealModel> =
+                        realm.query<UserRealModel>().find()
+                    dbtest.forEach{
+                        println("${it.login} ${it.password} ${it.money}")
+                    }
+                }
+                "7" -> realm.write{
+                    val dbtest: RealmResults<UserRealModel> =
+                        this.query<UserRealModel>().find()
+                    delete(dbtest)
+                }
                 "0" -> exit = true
             }
         }
